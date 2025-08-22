@@ -1,0 +1,2484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Event Manager Pro</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --glass: rgba(255, 255, 255, 0.1);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --shadow-lg: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gradient);
+            min-height: 100vh;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+
+        /* Animations */
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Utilitaires */
+        .hidden { display: none !important; }
+        .loading { animation: rotate 1s linear infinite; }
+        .shake { animation: shake 0.5s ease-in-out; }
+        
+        /* Header Global */
+        .app-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+            padding: 15px 0;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            color: white;
+            font-weight: 500;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--glass);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        /* Login Interface */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 450px;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: 800;
+            background: var(--gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--danger);
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 18px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* Dashboard DJ */
+        .dashboard {
+            padding-top: 100px;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px;
+        }
+
+        .dashboard-header {
+            margin-bottom: 40px;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .dashboard-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 18px;
+        }
+
+        /* Statistiques */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            animation: slideInUp 0.6s ease-out 0.1s both;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Événements */
+        .events-section {
+            margin-bottom: 40px;
+            animation: slideInUp 0.6s ease-out 0.2s both;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .event-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .event-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .event-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-preparation { background: #fef3c7; color: #92400e; }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-finished { background: #e5e7eb; color: #374151; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+
+        .event-info {
+            margin-bottom: 20px;
+        }
+
+        .event-detail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Interface Utilisateur */
+        .user-interface {
+            padding-top: 100px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .user-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .user-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .user-title {
+            font-size: 28px;
+            font-weight: 800;
+            background: var(--gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .user-subtitle {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .event-selector {
+            margin-bottom: 30px;
+        }
+
+        .event-option {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .event-option:hover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .event-option.selected {
+            border-color: var(--primary);
+            background: #f0f4ff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Recherche Musicale Simplifiée */
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 50px 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #64748b;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result:hover {
+            background: #f8fafc;
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .result-artist {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .manual-entry {
+            background: #f0f9ff;
+            border: 2px dashed #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .manual-entry:hover {
+            background: #e0f2fe;
+        }
+
+        .queue-position {
+            background: var(--gradient);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .position-number {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .position-text {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        /* Modals */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 5px;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px 25px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--success);
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 3000;
+            min-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            border-left-color: var(--danger);
+        }
+
+        .notification.warning {
+            border-left-color: var(--warning);
+        }
+
+        .notification-header {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Loading States */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 4000;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: rotate 1s linear infinite;
+        }
+
+        /* Tables */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th,
+        .table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .table tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Cooldown Timer */
+        .cooldown-timer {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-top: 15px;
+            color: #92400e;
+        }
+
+        /* Status en temps réel */
+        .real-time-indicator {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--success);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .real-time-indicator.offline {
+            background: var(--danger);
+        }
+
+        .real-time-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse 2s infinite;
+        }
+
+        /* QR Code et partage */
+        .qr-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-code-container {
+            display: inline-block;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 15px;
+        }
+
+        .qr-code-img {
+            display: block;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .qr-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .access-method {
+            margin-bottom: 30px;
+        }
+
+        .access-tabs {
+            display: flex;
+            background: #e2e8f0;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .access-tab {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .access-tab.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .access-panel {
+            display: none;
+        }
+
+        .access-panel.active {
+            display: block;
+        }
+
+        .code-input-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 16px 50px 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .code-input.success {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+
+        .code-input.error {
+            border-color: var(--danger);
+            background: #fef2f2;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .scan-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #64748b;
+        }
+
+        .qr-download-section {
+            background: white;
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .qr-sizes {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .qr-size-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .qr-size-btn:hover,
+        .qr-size-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+        @media (max-width: 768px) {
+            .header-content {
+                padding: 0 20px;
+            }
+
+            .dashboard-container {
+                padding: 0 20px;
+            }
+
+            .dashboard-title {
+                font-size: 28px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .events-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .event-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+
+            .notification {
+                right: 20px;
+                left: 20px;
+                transform: translateY(-100px);
+                min-width: auto;
+            }
+
+            .notification.show {
+                transform: translateY(0);
+            }
+
+            .real-time-indicator {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <script src="auth-protection.js"></script>
+    <!-- Header Global -->
+    <header class="app-header" id="appHeader" style="display: none;">
+        <div class="header-content">
+            <a href="#" class="logo">🎵 DJ Event Manager Pro</a>
+            <div class="user-menu">
+                <span class="user-info" id="userInfo"></span>
+                <button class="btn btn-danger btn-sm" onclick="logout()">Déconnexion</button>
+            </div>
+        </div>
+    </header>
+
+    
+
+    <!-- Dashboard DJ -->
+    <div id="djDashboard" class="dashboard hidden">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">Tableau de bord DJ</h1>
+                <p class="dashboard-subtitle">Gestion professionnelle de vos événements musicaux</p>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎉</div>
+                    <div class="stat-number" id="totalEvents">0</div>
+                    <div class="stat-label">Événements Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">▶️</div>
+                    <div class="stat-number" id="activeEvents">0</div>
+                    <div class="stat-label">Événements Actifs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎵</div>
+                    <div class="stat-number" id="totalRequests">0</div>
+                    <div class="stat-label">Demandes Musicales</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">Utilisateurs Connectés</div>
+                </div>
+            </div>
+
+            <!-- Événements -->
+            <div class="events-section">
+                <div class="section-header">
+                    <h2 class="section-title">Mes Événements</h2>
+                    <button class="btn btn-primary" onclick="openEventModal()">
+                        ➕ Nouvel Événement
+                    </button>
+                </div>
+                <div class="events-grid" id="eventsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Modal Événement -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Nouvel Événement</h2>
+                <button class="close-btn" onclick="closeEventModal()">&times;</button>
+            </div>
+            
+            <form id="eventForm">
+                <div class="form-group">
+                    <label class="form-label" for="eventName">Nom de l'événement</label>
+                    <input type="text" id="eventName" class="form-input" placeholder="Ex: Mariage de Sophie & Paul" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="eventType">Type d'événement</label>
+                    <select id="eventType" class="form-input" required>
+                        <option value="">Sélectionner un type</option>
+                        <option value="mariage">Mariage</option>
+                        <option value="bar-mitzvah">Bar Mitzvah</option>
+                        <option value="bat-mitzvah">Bat Mitzvah</option>
+                        <option value="anniversaire">Anniversaire</option>
+                        <option value="soiree-entreprise">Soirée d'entreprise</option>
+                        <option value="fete-privee">Fête privée</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="eventDate">Date de l'événement</label>
+                    <input type="datetime-local" id="eventDate" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="eventLocation">Lieu</label>
+                    <input type="text" id="eventLocation" class="form-input" placeholder="Ex: Château de Versailles" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="expectedGuests">Nombre d'invités attendus</label>
+                    <input type="number" id="expectedGuests" class="form-input" placeholder="Ex: 150" min="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="eventDescription">Description (optionnel)</label>
+                    <textarea id="eventDescription" class="form-input" rows="3" placeholder="Informations supplémentaires sur l'événement..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="eventStatus">Statut</label>
+                    <select id="eventStatus" class="form-input" required>
+                        <option value="preparation">En préparation</option>
+                        <option value="active">Actif</option>
+                        <option value="finished">Terminé</option>
+                        <option value="cancelled">Annulé</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%;" id="saveEventBtn">
+                    <span id="saveEventText">Créer l'événement</span>
+                    <span id="saveEventLoader" class="hidden loading">🔄</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Gestion Événement -->
+    <div id="manageEventModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="manageEventTitle">Gestion de l'événement</h2>
+                <button class="close-btn" onclick="closeManageEventModal()">&times;</button>
+            </div>
+            
+            <div id="manageEventContent">
+                <!-- Contenu dynamique -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Indicateur temps réel -->
+    <div class="real-time-indicator" id="realTimeIndicator">
+        <div class="real-time-dot"></div>
+        <span>Connecté</span>
+    </div>
+
+    <script>
+        // Configuration et État Global
+        const CONFIG = {
+            DJ_CREDENTIALS: {
+                username: 'dj_admin',
+                password: 'EventManager2024!'
+            },
+            API_BASE_URL: '/.netlify/functions',
+            SESSION_TIMEOUT: 8 * 60 * 60 * 1000, // 8 heures
+            SEARCH_DEBOUNCE: 300, // 300ms pour la recherche
+            ANTI_SPAM_COOLDOWN: 30000, // 30 secondes entre les demandes
+            MAX_REQUESTS_PER_USER: 5,
+            SYNC_INTERVAL: 5000 // 5 secondes
+        };
+
+        let APP_STATE = {
+            currentUser: null,
+            currentInterface: 'login',
+            events: [],
+            musicRequests: [],
+            selectedEventId: null,
+            currentUserId: null,
+            sessionToken: null,
+            lastActivity: Date.now(),
+            isOnline: true,
+            lastRequestTime: 0,
+            searchTimeout: null,
+            cooldownTimer: null,
+            selectedSong: null,
+            lastSyncTime: 0
+        };
+
+        // Système de Base de Données Netlify avec Fallback Local
+        class NetlifyDataManager {
+            static async apiCall(endpoint, method = 'GET', data = null) {
+                try {
+                    const options = {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    };
+
+                    if (data) {
+                        options.body = JSON.stringify(data);
+                    }
+
+                    const response = await fetch(`${CONFIG.API_BASE_URL}/${endpoint}`, options);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    // Synchroniser avec le stockage local en cas de succès
+                    if (result.success && method === 'GET') {
+                        this.updateLocalCache(endpoint, result.data);
+                    }
+                    
+                    APP_STATE.isOnline = true;
+                    return result;
+                } catch (error) {
+                    console.warn('API call failed, using local storage:', error);
+                    APP_STATE.isOnline = false;
+                    updateConnectionStatus();
+                    // Fallback vers le stockage local
+                    return this.localFallback(endpoint, method, data);
+                }
+            }
+
+            static updateLocalCache(endpoint, data) {
+                const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[],"lastSync":0}');
+                
+                if (endpoint === 'events') {
+                    storage.events = data;
+                } else if (endpoint === 'requests') {
+                    storage.requests = data;
+                }
+                
+                storage.lastSync = Date.now();
+                localStorage.setItem('djEventData', JSON.stringify(storage));
+            }
+
+            static localFallback(endpoint, method, data) {
+                const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[],"lastSync":0}');
+                
+                switch (endpoint) {
+                    case 'events':
+                        if (method === 'GET') return { success: true, data: storage.events };
+                        if (method === 'POST') {
+                            data.id = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                            data.needsSync = true; // Marquer pour synchronisation future
+                            storage.events.push(data);
+                            localStorage.setItem('djEventData', JSON.stringify(storage));
+                            return { success: true, data: data };
+                        }
+                        // Support local PUT/DELETE for events endpoints like "events/<id>"
+                        if (method === 'PUT' || method === 'DELETE') {
+                            try {
+                                const parts = endpoint.split('/');
+                                const eventId = parts.length > 1 ? parts[1] : null;
+                                if (!eventId) break;
+                                const idx = storage.events.findIndex(e => e.id === eventId);
+                                if (idx === -1) break;
+                                if (method === 'PUT') {
+                                    storage.events[idx] = { ...storage.events[idx], ...data, needsSync: true };
+                                    localStorage.setItem('djEventData', JSON.stringify(storage));
+                                    return { success: true, data: storage.events[idx] };
+                                } else {
+                                    storage.events.splice(idx, 1);
+                                    localStorage.setItem('djEventData', JSON.stringify(storage));
+                                    return { success: true, data: { id: eventId } };
+                                }
+                            } catch (_) { /* ignore */ }
+                        }
+                        break;
+                    case 'requests':
+                        if (method === 'GET') return { success: true, data: storage.requests };
+                        if (method === 'POST') {
+                            data.id = 'local_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+                            data.needsSync = true;
+                            storage.requests.push(data);
+                            localStorage.setItem('djEventData', JSON.stringify(storage));
+                            return { success: true, data: data };
+                        }
+                        if (method === 'PUT' || method === 'DELETE') {
+                            try {
+                                // support either 'requests/<id>' or 'requests?id=<id>'
+                                let requestId = null;
+                                if (endpoint.includes('/')) {
+                                    const parts = endpoint.split('/');
+                                    requestId = parts[1] || null;
+                                }
+                                if (!requestId && endpoint.includes('?')) {
+                                    const qs = endpoint.split('?')[1];
+                                    const params = new URLSearchParams(qs);
+                                    requestId = params.get('id');
+                                }
+                                if (!requestId) break;
+                                const idx = storage.requests.findIndex(r => r.id === requestId);
+                                if (idx === -1) break;
+                                if (method === 'PUT') {
+                                    storage.requests[idx] = { ...storage.requests[idx], ...data, needsSync: true };
+                                    localStorage.setItem('djEventData', JSON.stringify(storage));
+                                    return { success: true, data: storage.requests[idx] };
+                                } else {
+                                    storage.requests.splice(idx, 1);
+                                    localStorage.setItem('djEventData', JSON.stringify(storage));
+                                    return { success: true, data: { id: requestId } };
+                                }
+                            } catch (_) { /* ignore */ }
+                        }
+                        break;
+                }
+                return { success: false, error: 'Local fallback failed' };
+            }
+
+            static async saveEvent(event) {
+                return await this.apiCall('events', 'POST', event);
+            }
+
+            static async getEvents() {
+                const result = await this.apiCall('events', 'GET');
+                return result.data || [];
+            }
+
+            static async saveRequest(request) {
+                return await this.apiCall('requests', 'POST', request);
+            }
+
+            static async updateRequest(requestId, updates) {
+                // Backend reads id from query param
+                return await this.apiCall(`requests?id=${encodeURIComponent(requestId)}`, 'PUT', updates);
+            }
+
+            static async deleteRequest(requestId) {
+                return await this.apiCall(`requests?id=${encodeURIComponent(requestId)}`, 'DELETE');
+            }
+
+            static async getRequests() {
+                const result = await this.apiCall('requests', 'GET');
+                return result.data || [];
+            }
+
+            static async updateEvent(eventId, updates) {
+                return await this.apiCall(`events/${eventId}`, 'PUT', updates);
+            }
+
+            static async deleteEvent(eventId) {
+                return await this.apiCall(`events/${eventId}`, 'DELETE');
+            }
+
+            // Synchroniser les données locales non synchronisées quand on revient en ligne
+            static async syncPendingData() {
+                const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[]}');
+                
+                // Synchroniser les événements en attente
+                for (const event of storage.events.filter(e => e.needsSync)) {
+                    try {
+                        await this.saveEvent(event);
+                        event.needsSync = false;
+                    } catch (error) {
+                        console.error('Failed to sync event:', error);
+                    }
+                }
+                
+                // Synchroniser les demandes en attente
+                for (const request of storage.requests.filter(r => r.needsSync)) {
+                    try {
+                        await this.saveRequest(request);
+                        request.needsSync = false;
+                    } catch (error) {
+                        console.error('Failed to sync request:', error);
+                    }
+                }
+                
+                localStorage.setItem('djEventData', JSON.stringify(storage));
+            }
+        }
+
+        // Gestionnaire de Recherche Musicale Amélioré et Simplifié
+        class SimpleMusicSearch {
+            static async searchSongs(query) {
+                if (!query || query.length < 2) return [];
+                
+                // Essayer d'abord avec une base de données locale étendue pour une réponse rapide
+                const localResults = this.searchLocalDatabase(query);
+                
+                try {
+                    // Ensuite essayer l'API externe pour des résultats plus complets
+                    const response = await fetch(
+                        `https://musicbrainz.org/ws/2/recording?query=recording:"${encodeURIComponent(query)}"&fmt=json&limit=6`
+                    );
+                    
+                    if (!response.ok) throw new Error('MusicBrainz API error');
+                    
+                    const data = await response.json();
+                    
+                    const externalResults = data.recordings.map(recording => ({
+                        title: recording.title,
+                        artist: recording['artist-credit'] ? recording['artist-credit'][0].name : 'Artiste inconnu',
+                        source: 'musicbrainz'
+                    })).filter(song => song.title && song.artist);
+                    
+                    // Combiner les résultats locaux et externes, en évitant les doublons
+                    const combinedResults = [...localResults];
+                    
+                    externalResults.forEach(extSong => {
+                        const exists = combinedResults.some(localSong => 
+                            localSong.title.toLowerCase().includes(extSong.title.toLowerCase()) ||
+                            extSong.title.toLowerCase().includes(localSong.title.toLowerCase())
+                        );
+                        if (!exists && combinedResults.length < 8) {
+                            combinedResults.push(extSong);
+                        }
+                    });
+                    
+                    return combinedResults.slice(0, 8);
+                    
+                } catch (error) {
+                    console.log('API externe indisponible, utilisation de la base locale uniquement');
+                    return localResults;
+                }
+            }
+
+            static searchLocalDatabase(query) {
+                // Base de données locale étendue avec plus de variété musicale
+                const musicDatabase = [
+                    // Classiques rock/pop
+                    { title: 'Bohemian Rhapsody', artist: 'Queen' },
+                    { title: 'Hotel California', artist: 'Eagles' },
+                    { title: 'Imagine', artist: 'John Lennon' },
+                    { title: 'Billie Jean', artist: 'Michael Jackson' },
+                    { title: 'Sweet Child O Mine', artist: 'Guns N Roses' },
+                    { title: 'Smells Like Teen Spirit', artist: 'Nirvana' },
+                    { title: 'Dancing Queen', artist: 'ABBA' },
+                    { title: 'Like a Rolling Stone', artist: 'Bob Dylan' },
+                    { title: 'Stairway to Heaven', artist: 'Led Zeppelin' },
+                    { title: 'Yesterday', artist: 'The Beatles' },
+                    { title: 'Hey Jude', artist: 'The Beatles' },
+                    { title: 'Let It Be', artist: 'The Beatles' },
+                    { title: 'Come As You Are', artist: 'Nirvana' },
+                    { title: 'Purple Rain', artist: 'Prince' },
+                    
+                    // Hits récents
+                    { title: 'Blinding Lights', artist: 'The Weeknd' },
+                    { title: 'Shape of You', artist: 'Ed Sheeran' },
+                    { title: 'Bad Guy', artist: 'Billie Eilish' },
+                    { title: 'Watermelon Sugar', artist: 'Harry Styles' },
+                    { title: 'Levitating', artist: 'Dua Lipa' },
+                    { title: 'As It Was', artist: 'Harry Styles' },
+                    { title: 'Anti-Hero', artist: 'Taylor Swift' },
+                    { title: 'Flowers', artist: 'Miley Cyrus' },
+                    
+                    // Français
+                    { title: 'Je veux', artist: 'Zaz' },
+                    { title: 'Alors on danse', artist: 'Stromae' },
+                    { title: 'Formidable', artist: 'Stromae' },
+                    { title: 'La Vie en Rose', artist: 'Édith Piaf' },
+                    { title: 'Non, je ne regrette rien', artist: 'Édith Piaf' },
+                    { title: 'Dernière Danse', artist: 'Indila' },
+                    { title: 'Jour 1', artist: 'Louane' },
+                    { title: 'Tout oublier', artist: 'Angèle' },
+                    
+                    // Dance/Electronic
+                    { title: 'One More Time', artist: 'Daft Punk' },
+                    { title: 'Around the World', artist: 'Daft Punk' },
+                    { title: 'Titanium', artist: 'David Guetta ft. Sia' },
+                    { title: 'Levels', artist: 'Avicii' },
+                    { title: 'Wake Me Up', artist: 'Avicii' },
+                    
+                    // Mariage/Événements
+                    { title: 'Perfect', artist: 'Ed Sheeran' },
+                    { title: 'All of Me', artist: 'John Legend' },
+                    { title: 'Thinking Out Loud', artist: 'Ed Sheeran' },
+                    { title: 'A Thousand Years', artist: 'Christina Perri' },
+                    { title: 'Can\'t Help Myself', artist: 'Four Tops' },
+                    { title: 'I Will Always Love You', artist: 'Whitney Houston' },
+                    { title: 'At Last', artist: 'Etta James' },
+                    { title: 'What a Wonderful World', artist: 'Louis Armstrong' },
+                    { title: 'Fly Me to the Moon', artist: 'Frank Sinatra' },
+                    { title: 'My Way', artist: 'Frank Sinatra' },
+                    { title: 'Stand By Me', artist: 'Ben E. King' },
+                    
+                    // Ambiance festive
+                    { title: 'I Gotta Feeling', artist: 'Black Eyed Peas' },
+                    { title: 'Uptown Funk', artist: 'Mark Ronson ft. Bruno Mars' },
+                    { title: 'Happy', artist: 'Pharrell Williams' },
+                    { title: 'Can\'t Stop the Feeling', artist: 'Justin Timberlake' },
+                    { title: 'Shut Up and Dance', artist: 'Walk the Moon' },
+                    { title: 'Don\'t Stop Me Now', artist: 'Queen' },
+                    { title: 'September', artist: 'Earth, Wind & Fire' },
+                    { title: 'I Want It That Way', artist: 'Backstreet Boys' },
+                    { title: 'Everybody', artist: 'Backstreet Boys' }
+                ];
+
+                const queryLower = query.toLowerCase();
+                
+                // Recherche intelligente : titre exact, puis titre contient, puis artiste contient
+                const exactMatches = musicDatabase.filter(song => 
+                    song.title.toLowerCase() === queryLower
+                );
+                
+                const titleMatches = musicDatabase.filter(song => 
+                    song.title.toLowerCase().includes(queryLower) &&
+                    !exactMatches.some(exact => exact.title === song.title)
+                );
+                
+                const artistMatches = musicDatabase.filter(song => 
+                    song.artist.toLowerCase().includes(queryLower) &&
+                    !exactMatches.some(exact => exact.title === song.title) &&
+                    !titleMatches.some(title => title.title === song.title)
+                );
+                
+                return [...exactMatches, ...titleMatches, ...artistMatches].slice(0, 6);
+            }
+        }
+
+        // Gestionnaire de QR Codes et codes courts
+        class QRCodeManager {
+            static generateShortCode(eventName, eventType) {
+                // Créer un code court basé sur le nom et type d'événement (robuste aux valeurs null/undefined)
+                const safeName = (typeof eventName === 'string' && eventName.trim().length > 0) ? eventName : 'EV';
+                const safeType = (typeof eventType === 'string' && eventType.trim().length > 0) ? eventType : 'XX';
+
+                const namePrefix = safeName.substring(0, 2).toUpperCase().replace(/[^A-Z]/g, 'EV');
+                const typePrefix = safeType.substring(0, 2).toUpperCase().replace(/[^A-Z]/g, 'XX');
+                const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+                
+                return `${namePrefix}${typePrefix}${randomSuffix}`;
+            }
+
+            static generateQRCodeURL(eventId, size = 200, format = 'png') {
+                // Always route participants to the public participant page
+                const eventUrl = `${window.location.origin}/participant.html?event=${eventId}`;
+                
+                // Utiliser l'API QR Server (gratuite et fiable)
+                if (format === 'svg') {
+                    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(eventUrl)}&format=svg`;
+                } else {
+                    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(eventUrl)}&ecc=M`;
+                }
+            }
+
+            static async downloadQRCode(eventId, format = 'png', size = 300) {
+                try {
+                    const event = APP_STATE.events.find(e => e.id === eventId);
+                    if (!event) return;
+
+                    const qrUrl = this.generateQRCodeURL(eventId, size, format);
+                    
+                    // Créer un lien de téléchargement
+                    const link = document.createElement('a');
+                    link.href = qrUrl;
+                    link.download = `QR-${event.shortCode || eventId}-${size}x${size}.${format}`;
+                    link.target = '_blank';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    NotificationManager.show(`QR Code téléchargé (${size}x${size} ${format.toUpperCase()})`);
+                } catch (error) {
+                    NotificationManager.show('Erreur lors du téléchargement du QR Code', 'error');
+                }
+            }
+
+            static printQRCode(eventId) {
+                const event = APP_STATE.events.find(e => e.id === eventId);
+                if (!event) return;
+
+                const qrUrl = this.generateQRCodeURL(eventId, 400);
+                const eventUrl = `${window.location.origin}/participant.html?event=${eventId}`;
+                
+                const printWindow = window.open('', '_blank');
+                const htmlContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>QR Code - ${event.name}</title>
+                        <style>
+                            body { 
+                                font-family: Arial, sans-serif; 
+                                text-align: center; 
+                                margin: 40px;
+                                color: #333;
+                            }
+                            .qr-container { 
+                                border: 2px solid #000; 
+                                padding: 30px; 
+                                display: inline-block;
+                                background: white;
+                            }
+                            .event-title { 
+                                font-size: 24px; 
+                                font-weight: bold; 
+                                margin-bottom: 20px;
+                            }
+                            .event-details {
+                                margin: 15px 0;
+                                font-size: 16px;
+                            }
+                            .short-code {
+                                font-family: 'Courier New', monospace;
+                                font-size: 20px;
+                                font-weight: bold;
+                                background: #f0f0f0;
+                                padding: 10px;
+                                margin: 15px 0;
+                                border-radius: 5px;
+                            }
+                            .qr-img { 
+                                margin: 20px 0;
+                            }
+                            .instructions {
+                                margin-top: 20px;
+                                font-size: 14px;
+                                color: #666;
+                            }
+                            .url {
+                                font-family: monospace;
+                                font-size: 12px;
+                                word-break: break-all;
+                                background: #f8f8f8;
+                                padding: 10px;
+                                margin: 10px 0;
+                            }
+                            @media print {
+                                body { margin: 0; }
+                                .qr-container { border: 2px solid #000; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="qr-container">
+                            <div class="event-title">${event.name}</div>
+                            <div class="event-details">
+                                📅 ${new Date(event.date).toLocaleDateString('fr-FR')}<br>
+                                📍 ${event.location}
+                            </div>
+                            <div class="short-code">
+                                Code: ${event.shortCode || 'N/A'}
+                            </div>
+                            <img src="${qrUrl}" alt="QR Code" class="qr-img">
+                            <div class="instructions">
+                                <strong>🎵 Demandes musicales</strong><br>
+                                Scannez ce QR Code avec votre téléphone<br>
+                                ou utilisez le code ci-dessus
+                            </div>
+                            <div class="url">${eventUrl}</div>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                printWindow.document.write(htmlContent);
+                printWindow.document.close();
+                printWindow.print();
+            }
+
+            static findEventByCode(code) {
+                if (!code) return null;
+                const cleanCode = code.trim().toUpperCase();
+                return APP_STATE.events.find(e => 
+                    e.shortCode && e.shortCode.toUpperCase() === cleanCode
+                );
+            }
+        }
+        class SecurityManager {
+            static generateSessionToken() {
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substr(2, 16);
+                return `session_${timestamp}_${random}`;
+            }
+
+            static sanitizeInput(input) {
+                if (typeof input !== 'string') return input;
+                
+                return input
+                    .replace(/<script[^>]*>.*?<\/script>/gi, '')
+                    .replace(/<[\/\!]*?[^<>]*?>/gi, '')
+                    .replace(/javascript:/gi, '')
+                    .replace(/on\w+=/gi, '')
+                    .trim();
+            }
+
+            static checkRateLimit(userId) {
+                const now = Date.now();
+                const lastRequest = parseInt(localStorage.getItem(`lastRequest_${userId}`) || '0');
+                
+                if (now - lastRequest < CONFIG.ANTI_SPAM_COOLDOWN) {
+                    return false;
+                }
+                
+                localStorage.setItem(`lastRequest_${userId}`, now.toString());
+                return true;
+            }
+        }
+
+        // Gestionnaire de Notifications
+        class NotificationManager {
+            static show(message, type = 'success', duration = 4000) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                
+                const icons = {
+                    success: '✅',
+                    error: '❌',
+                    warning: '⚠️',
+                    info: 'ℹ️'
+                };
+
+                const titles = {
+                    success: 'Succès',
+                    error: 'Erreur',
+                    warning: 'Attention',
+                    info: 'Information'
+                };
+
+                notification.innerHTML = `
+                    <div class="notification-header">
+                        ${icons[type]} ${titles[type]}
+                    </div>
+                    <div>${message}</div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 100);
+                
+                const hideNotification = () => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                };
+
+                setTimeout(hideNotification, duration);
+                notification.addEventListener('click', hideNotification);
+                
+                return notification;
+            }
+        }
+
+        // Gestionnaire d'Interface
+        class InterfaceManager {
+            static showInterface(interfaceName) {
+                document.querySelectorAll('#loginInterface, #djDashboard, #userInterface').forEach(el => {
+                    el.classList.add('hidden');
+                });
+                
+                const targetInterface = document.getElementById(interfaceName + 'Interface') || 
+                                      document.getElementById(interfaceName);
+                
+                if (targetInterface) {
+                    targetInterface.classList.remove('hidden');
+                }
+                
+                const header = document.getElementById('appHeader');
+                if (interfaceName === 'login') {
+                    header.style.display = 'none';
+                } else {
+                    header.style.display = 'block';
+                    this.updateHeader();
+                }
+                
+                APP_STATE.currentInterface = interfaceName;
+                
+                if (interfaceName === 'djDashboard') {
+                    updateDJDashboard();
+                } else if (interfaceName === 'userInterface') {
+                    initUserInterface();
+                }
+            }
+
+            static updateHeader() {
+                const userInfo = document.getElementById('userInfo');
+                if (APP_STATE.currentUser) {
+                    userInfo.textContent = `👋 Bonjour, ${APP_STATE.currentUser.name}`;
+                }
+            }
+
+            static showLoading(show = true) {
+                const overlay = document.getElementById('loadingOverlay');
+                if (show) {
+                    overlay.classList.remove('hidden');
+                } else {
+                    overlay.classList.add('hidden');
+                }
+            }
+        }
+
+        // Synchronisation des données améliorée
+        class DataSyncManager {
+            static async syncData(force = false) {
+                try {
+                    const now = Date.now();
+                    if (!force && now - APP_STATE.lastSyncTime < CONFIG.SYNC_INTERVAL) {
+                        return; // Éviter la sur-synchronisation
+                    }
+
+                    console.log('Synchronizing data...');
+                    
+                    // Synchroniser d'abord les données en attente si on revient en ligne
+                    if (APP_STATE.isOnline) {
+                        await NetlifyDataManager.syncPendingData();
+                    }
+
+                    const [events, requests] = await Promise.all([
+                        NetlifyDataManager.getEvents(),
+                        NetlifyDataManager.getRequests()
+                    ]);
+
+                    // Mettre à jour l'état global
+                    APP_STATE.events = events || [];
+                    APP_STATE.musicRequests = requests || [];
+                    APP_STATE.lastSyncTime = now;
+
+                    console.log('Data synchronized:', {
+                        events: APP_STATE.events.length,
+                        requests: APP_STATE.musicRequests.length
+                    });
+
+                    // Mettre à jour l'interface si nécessaire
+                    this.updateUI();
+
+                    APP_STATE.isOnline = true;
+                    updateConnectionStatus();
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Sync error:', error);
+                    APP_STATE.isOnline = false;
+                    updateConnectionStatus();
+                    return false;
+                }
+            }
+
+            static updateUI() {
+                // Mettre à jour l'interface selon l'écran actuel
+                switch (APP_STATE.currentInterface) {
+                    case 'djDashboard':
+                        updateDJDashboard();
+                        break;
+                    case 'userInterface':
+                        updateActiveEventsList();
+                        updateUserQueuePosition();
+                        break;
+                }
+            }
+
+            static startAutoSync() {
+                // Synchronisation initiale immédiate
+                this.syncData(true);
+                
+                // Synchronisation périodique
+                if (this.syncInterval) {
+                    clearInterval(this.syncInterval);
+                }
+                
+                this.syncInterval = setInterval(() => {
+                    this.syncData();
+                }, CONFIG.SYNC_INTERVAL);
+            }
+
+            static stopAutoSync() {
+                if (this.syncInterval) {
+                    clearInterval(this.syncInterval);
+                    this.syncInterval = null;
+                }
+            }
+        }
+
+        // Event Handlers
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = SecurityManager.sanitizeInput(document.getElementById('username').value);
+            const password = SecurityManager.sanitizeInput(document.getElementById('password').value);
+            
+            if (!username || !password) {
+                NotificationManager.show('Veuillez remplir tous les champs', 'error');
+                return;
+            }
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const loginText = document.getElementById('loginBtnText');
+            const loginLoader = document.getElementById('loginLoader');
+            
+            loginBtn.disabled = true;
+            loginText.classList.add('hidden');
+            loginLoader.classList.remove('hidden');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            try {
+                if (username === CONFIG.DJ_CREDENTIALS.username && password === CONFIG.DJ_CREDENTIALS.password) {
+                    APP_STATE.sessionToken = SecurityManager.generateSessionToken();
+                    APP_STATE.currentUser = {
+                        id: 'dj_1',
+                        name: 'DJ Admin',
+                        role: 'dj'
+                    };
+                    
+                    localStorage.setItem('sessionToken', APP_STATE.sessionToken);
+                    localStorage.setItem('djLoggedIn', 'true');
+                    
+                    InterfaceManager.showInterface('djDashboard');
+                    NotificationManager.show('Connexion réussie ! Bienvenue dans votre espace DJ.');
+                    
+                    // Démarrer la synchronisation
+                    DataSyncManager.startAutoSync();
+                    
+                } else {
+                    NotificationManager.show('Identifiants incorrects', 'error');
+                }
+            } catch (error) {
+                NotificationManager.show('Erreur de connexion', 'error');
+            }
+            
+            loginBtn.disabled = false;
+            loginText.classList.remove('hidden');
+            loginLoader.classList.add('hidden');
+        }
+
+        function logout() {
+            localStorage.removeItem('sessionToken');
+            localStorage.removeItem('djLoggedIn');
+            
+            APP_STATE.sessionToken = null;
+            APP_STATE.currentUser = null;
+            
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
+            InterfaceManager.showInterface('login');
+            NotificationManager.show('Déconnexion réussie');
+        }
+
+        async function updateDJDashboard() {
+            // Synchroniser les données
+            await DataSyncManager.syncData();
+            
+            const activeEvents = APP_STATE.events.filter(e => e.status === 'active').length;
+            const totalRequests = APP_STATE.musicRequests.length;
+            const connectedUsers = new Set(APP_STATE.musicRequests.map(r => r.userId)).size;
+            
+            document.getElementById('totalEvents').textContent = APP_STATE.events.length;
+            document.getElementById('activeEvents').textContent = activeEvents;
+            document.getElementById('totalRequests').textContent = totalRequests;
+            document.getElementById('totalUsers').textContent = connectedUsers;
+            
+            updateEventsGrid();
+        }
+
+        function updateEventsGrid() {
+            const grid = document.getElementById('eventsGrid');
+            
+            if (APP_STATE.events.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.7);">
+                        <div style="font-size: 48px; margin-bottom: 20px;">🎵</div>
+                        <h3 style="font-size: 24px; margin-bottom: 10px;">Aucun événement pour le moment</h3>
+                        <p>Créez votre premier événement pour commencer !</p>
+                        <button class="btn btn-primary" style="margin-top: 20px;" onclick="openEventModal()">
+                            ➕ Créer un événement
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Générer des codes courts pour les événements qui n'en ont pas
+            let hasChanges = false;
+            APP_STATE.events.forEach(event => {
+                if (!event.shortCode) {
+                    event.shortCode = QRCodeManager.generateShortCode(event.name, event.type);
+                    hasChanges = true;
+                }
+            });
+            // Optionnel: on pourrait persister ces changements via NetlifyDataManager au besoin.
+            // Laisser la synchro gérer la persistance pour éviter des appels multiples.
+            
+            grid.innerHTML = APP_STATE.events.map(event => {
+                const date = new Date(event.date);
+                const statusClass = `status-${event.status}`;
+                const statusText = {
+                    'preparation': 'En préparation',
+                    'active': 'Actif',
+                    'finished': 'Terminé',
+                    'cancelled': 'Annulé'
+                }[event.status];
+                
+                const eventRequests = APP_STATE.musicRequests.filter(r => r.eventId === event.id);
+                
+                return `
+                    <div class="event-card">
+                        <div class="event-header">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <h3 class="event-title">${event.name}</h3>
+                                    <div style="background: var(--primary); color: white; padding: 3px 8px; border-radius: 6px; font-family: monospace; font-size: 11px; font-weight: bold;">
+                                        ${event.shortCode}
+                                    </div>
+                                </div>
+                                <span class="event-status ${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="event-info">
+                            <div class="event-detail">
+                                <span>📅</span>
+                                <span>${date.toLocaleDateString('fr-FR')} à ${date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</span>
+                            </div>
+                            <div class="event-detail">
+                                <span>📍</span>
+                                <span>${event.location}</span>
+                            </div>
+                            <div class="event-detail">
+                                <span>👥</span>
+                                <span>${event.expectedGuests} invités attendus</span>
+                            </div>
+                            <div class="event-detail">
+                                <span>🎵</span>
+                                <span>${eventRequests.length} demandes musicales</span>
+                            </div>
+                        </div>
+                        
+                        <div class="event-actions">
+                            ${event.status === 'preparation' ? `<button class="btn btn-success btn-sm" onclick="changeEventStatus('${event.id}', 'active')">▶️ Activer</button>` : ''}
+                            ${event.status === 'active' ? `<button class="btn btn-warning btn-sm" onclick="changeEventStatus('${event.id}', 'finished')">⏹️ Terminer</button>` : ''}
+                            <button class="btn btn-primary btn-sm" onclick="manageEvent('${event.id}')">📱 QR Code</button>
+                            <button class="btn btn-secondary btn-sm" onclick="editEvent('${event.id}')">✏️ Modifier</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteEventConfirm('${event.id}')">🗑️ Supprimer</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openEventModal(eventId = null) {
+            const modal = document.getElementById('eventModal');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('eventForm');
+            
+            if (eventId) {
+                const event = APP_STATE.events.find(e => e.id === eventId);
+                if (event) {
+                    title.textContent = 'Modifier l\'événement';
+                    document.getElementById('saveEventText').textContent = 'Mettre à jour';
+                    
+                    document.getElementById('eventName').value = event.name;
+                    document.getElementById('eventType').value = event.type;
+                    document.getElementById('eventDate').value = new Date(event.date).toISOString().slice(0, 16);
+                    document.getElementById('eventLocation').value = event.location;
+                    document.getElementById('expectedGuests').value = event.expectedGuests;
+                    document.getElementById('eventDescription').value = event.description || '';
+                    document.getElementById('eventStatus').value = event.status;
+                    
+                    form.dataset.eventId = eventId;
+                }
+            } else {
+                title.textContent = 'Nouvel Événement';
+                document.getElementById('saveEventText').textContent = 'Créer l\'événement';
+                form.reset();
+                delete form.dataset.eventId;
+                
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(20, 0);
+                document.getElementById('eventDate').value = tomorrow.toISOString().slice(0, 16);
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.remove('active');
+        }
+
+        async function handleEventForm(event) {
+            event.preventDefault();
+            const form = (event && event.target && event.target.closest)
+                ? event.target.closest('form')
+                : document.getElementById('eventForm');
+            if (!form) {
+                NotificationManager.show('Formulaire introuvable', 'error');
+                return;
+            }
+            
+            const formData = {
+                name: SecurityManager.sanitizeInput(document.getElementById('eventName').value),
+                type: document.getElementById('eventType').value,
+                date: document.getElementById('eventDate').value,
+                location: SecurityManager.sanitizeInput(document.getElementById('eventLocation').value),
+                expectedGuests: parseInt(document.getElementById('expectedGuests').value),
+                description: SecurityManager.sanitizeInput(document.getElementById('eventDescription').value),
+                status: document.getElementById('eventStatus').value,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Générer un code court pour le nouvel événement
+            if (!form.dataset.eventId) {
+                formData.shortCode = QRCodeManager.generateShortCode(formData.name, formData.type);
+            }
+            
+            if (!formData.name || !formData.type || !formData.date || !formData.location || !formData.expectedGuests) {
+                NotificationManager.show('Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('saveEventBtn');
+            const saveText = document.getElementById('saveEventText');
+            const saveLoader = document.getElementById('saveEventLoader');
+            
+            saveBtn.disabled = true;
+            saveText.classList.add('hidden');
+            saveLoader.classList.remove('hidden');
+            
+            try {
+                const eventId = form.dataset.eventId;
+                
+                if (eventId) {
+                    // Mise à jour
+                    const eventIndex = APP_STATE.events.findIndex(e => e.id === eventId);
+                    if (eventIndex !== -1) {
+                        APP_STATE.events[eventIndex] = { ...APP_STATE.events[eventIndex], ...formData };
+                        await NetlifyDataManager.updateEvent(eventId, formData);
+                    }
+                    NotificationManager.show('Événement modifié avec succès !');
+                } else {
+                    // Création
+                    const savedEvent = await NetlifyDataManager.saveEvent(formData);
+                    if (savedEvent.success) {
+                        APP_STATE.events.push(savedEvent.data);
+                    }
+                    NotificationManager.show('Événement créé avec succès !');
+                }
+                
+                closeEventModal();
+                updateDJDashboard();
+                
+            } catch (error) {
+                NotificationManager.show('Erreur lors de la sauvegarde', 'error');
+            }
+            
+            saveBtn.disabled = false;
+            saveText.classList.remove('hidden');
+            saveLoader.classList.add('hidden');
+        }
+
+        function editEvent(eventId) {
+            openEventModal(eventId);
+        }
+
+        async function changeEventStatus(eventId, newStatus) {
+            try {
+                // Mettre à jour localement d'abord pour une réponse rapide
+                const eventIndex = APP_STATE.events.findIndex(e => e.id === eventId);
+                if (eventIndex !== -1) {
+                    const oldStatus = APP_STATE.events[eventIndex].status;
+                    APP_STATE.events[eventIndex].status = newStatus;
+                    APP_STATE.events[eventIndex].updatedAt = new Date().toISOString();
+                    
+                    // Mettre à jour l'interface immédiatement
+                    updateDJDashboard();
+                    
+                    // Ensuite synchroniser avec le serveur
+                    try {
+                        await NetlifyDataManager.updateEvent(eventId, { 
+                            status: newStatus,
+                            updatedAt: new Date().toISOString()
+                        });
+                        
+                        const statusMessages = {
+                            'active': 'L\'événement est maintenant actif ! Les utilisateurs peuvent faire leurs demandes.',
+                            'finished': 'L\'événement a été marqué comme terminé.',
+                            'cancelled': 'L\'événement a été annulé.'
+                        };
+                        
+                        NotificationManager.show(statusMessages[newStatus]);
+                        
+                        // Forcer une synchronisation pour s'assurer que tout est à jour
+                        await DataSyncManager.syncData(true);
+                        
+                    } catch (error) {
+                        // En cas d'erreur serveur, revenir à l'ancien statut
+                        APP_STATE.events[eventIndex].status = oldStatus;
+                        updateDJDashboard();
+                        NotificationManager.show('Erreur lors de la mise à jour du statut. Mode hors ligne activé.', 'warning');
+                    }
+                }
+            } catch (error) {
+                console.error('Error changing event status:', error);
+                NotificationManager.show('Erreur lors de la mise à jour du statut', 'error');
+            }
+        }
+
+        async function deleteEventConfirm(eventId) {
+            const event = APP_STATE.events.find(e => e.id === eventId);
+            if (confirm(`Êtes-vous sûr de vouloir supprimer l'événement "${event.name}" ?\n\nCette action est irréversible.`)) {
+                try {
+                    await NetlifyDataManager.deleteEvent(eventId);
+                    APP_STATE.events = APP_STATE.events.filter(e => e.id !== eventId);
+                    APP_STATE.musicRequests = APP_STATE.musicRequests.filter(r => r.eventId !== eventId);
+                    
+                    updateDJDashboard();
+                    NotificationManager.show('Événement supprimé avec succès');
+                } catch (error) {
+                    NotificationManager.show('Erreur lors de la suppression', 'error');
+                }
+            }
+        }
+
+        function manageEvent(eventId) {
+            const event = APP_STATE.events.find(e => e.id === eventId);
+            if (!event) return;
+            
+            const modal = document.getElementById('manageEventModal');
+            const title = document.getElementById('manageEventTitle');
+            const content = document.getElementById('manageEventContent');
+            
+            title.textContent = `Gestion - ${event.name}`;
+            
+            const eventRequests = APP_STATE.musicRequests.filter(r => r.eventId === eventId);
+            const pendingRequests = eventRequests.filter(r => r.status === 'pending');
+            const playedRequests = eventRequests.filter(r => r.status === 'played');
+            
+            content.innerHTML = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">📊 Statistiques de l'événement</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: var(--primary);">${eventRequests.length}</div>
+                            <div style="color: #64748b;">Demandes total</div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: var(--success);">${playedRequests.length}</div>
+                            <div style="color: #64748b;">Musiques jouées</div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: var(--warning);">${pendingRequests.length}</div>
+                            <div style="color: #64748b;">En attente</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">📱 QR Code & Partage</h3>
+                    <div class="qr-section">
+                        <div class="qr-code-container" id="qrCodeContainer">
+                            <div style="font-weight: 600; margin-bottom: 10px; color: var(--dark);">
+                                Code: <span id="eventCodeDisplay" style="font-family: 'Courier New', monospace; color: var(--primary);"></span>
+                            </div>
+                            <img id="qrCodeImage" class="qr-code-img" alt="QR Code" style="width: 200px; height: 200px;">
+                            <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
+                                Scannez pour accéder directement
+                            </div>
+                        </div>
+                        
+                        <div class="qr-actions">
+                            <button class="btn btn-primary btn-sm" onclick="downloadQRCode('png', 200)">
+                                💾 Télécharger PNG
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="copyEventLink(getCurrentEventId())">
+                                📋 Copier lien
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="shareEvent(getCurrentEventId())">
+                                📤 Partager
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="printQRCode()">
+                                🖨️ Imprimer
+                            </button>
+                        </div>
+                        
+                        <!-- Options de taille -->
+                        <div class="qr-download-section">
+                            <div style="font-weight: 600; margin-bottom: 10px;">📐 Télécharger en différentes tailles :</div>
+                            <div class="qr-sizes">
+                                <button class="qr-size-btn" onclick="downloadQRCode('png', 150)">150x150 (Web)</button>
+                                <button class="qr-size-btn" onclick="downloadQRCode('png', 300)">300x300 (Print)</button>
+                                <button class="qr-size-btn" onclick="downloadQRCode('png', 500)">500x500 (HD)</button>
+                                <button class="qr-size-btn" onclick="downloadQRCode('svg', 500)">SVG (Vector)</button>
+                            </div>
+                            <small style="color: #64748b;">
+                                💡 Utilisez 300x300 ou plus pour l'impression sur cartons d'invitation
+                            </small>
+                        </div>
+                        
+                        <!-- Lien direct pour backup -->
+                        <div style="margin-top: 20px;">
+                            <strong>🔗 Lien direct (backup) :</strong>
+                            <div style="font-family: monospace; background: white; padding: 15px; border-radius: 8px; margin: 10px 0; font-size: 12px; word-break: break-all; border: 2px dashed #e2e8f0;">
+                                <span id="directLinkDisplay"></span>
+                            </div>
+                            <small style="color: #64748b;">
+                                📋 Utilisez ce lien si les invités ne peuvent pas scanner le QR Code
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 style="margin-bottom: 15px;">🎵 File d'attente musicale (${pendingRequests.length})</h3>
+                    ${pendingRequests.length === 0 ? 
+                        '<p style="text-align: center; color: #64748b; font-style: italic; padding: 40px;">Aucune demande en attente</p>' :
+                        `<div style="max-height: 400px; overflow-y: auto;">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Chanson</th>
+                                        <th>Artiste</th>
+                                        <th>Demandé par</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${pendingRequests.map((request, index) => `
+                                        <tr>
+                                            <td><strong>#${index + 1}</strong></td>
+                                            <td style="font-weight: 600;">${request.songTitle}</td>
+                                            <td>${request.artist}</td>
+                                            <td>${request.userName}</td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm" onclick="playRequest('${request.id}')" title="Jouer maintenant">
+                                                    ▶️
+                                                </button>
+                                                <button class="btn btn-danger btn-sm" onclick="deleteRequest('${request.id}')" title="Supprimer">
+                                                    🗑️
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>`
+                    }
+                </div>
+            `;
+            
+            // Enregistrer l'événement courant pour les actions (téléchargement, impression...)
+            APP_STATE.selectedEventId = eventId;
+
+            // Renseigner le code court affiché, le QR et le lien direct
+            const codeEl = document.getElementById('eventCodeDisplay');
+            const qrImgEl = document.getElementById('qrCodeImage');
+            const directLinkEl = document.getElementById('directLinkDisplay');
+
+            if (codeEl) codeEl.textContent = event.shortCode || 'QR Code';
+
+            if (qrImgEl) {
+                const qrUrl = QRCodeManager.generateQRCodeURL(eventId, 200, 'png');
+                qrImgEl.src = qrUrl;
+                qrImgEl.alt = `QR Code pour ${event.name}`;
+            }
+
+            if (directLinkEl) {
+                const shareUrl = `${window.location.origin}/participant.html?event=${eventId}`;
+                directLinkEl.textContent = shareUrl;
+            }
+
+            modal.classList.add('active');
+        }
+
+        
+
+        function closeManageEventModal() {
+            document.getElementById('manageEventModal').classList.remove('active');
+        }
+
+        function shareEvent(eventId) {
+            const event = APP_STATE.events.find(e => e.id === eventId);
+            const shareUrl = `${window.location.origin}/participant.html?event=${eventId}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `🎵 ${event.name} - Demandes musicales`,
+                    text: `Proposez vos musiques préférées pour ${event.name} !`,
+                    url: shareUrl
+                }).catch(console.error);
+            } else {
+                copyEventLink(eventId);
+            }
+        }
+
+        function copyEventLink(eventId) {
+            const shareUrl = `${window.location.origin}/participant.html?event=${eventId}`;
+            
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                NotificationManager.show('Lien copié dans le presse-papiers !');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                NotificationManager.show('Lien copié !');
+            });
+        }
+
+        // DJ wrappers for QR actions (participant flow is on participant.html)
+        function getCurrentEventId() {
+            return APP_STATE.selectedEventId;
+        }
+
+        function downloadQRCode(format = 'png', size = 300) {
+            const eventId = APP_STATE.selectedEventId;
+            if (!eventId) {
+                NotificationManager.show('Sélectionnez un événement', 'warning');
+                return;
+            }
+            QRCodeManager.downloadQRCode(eventId, format, size);
+        }
+
+        function printQRCode() {
+            const eventId = APP_STATE.selectedEventId;
+            if (!eventId) {
+                NotificationManager.show('Sélectionnez un événement', 'warning');
+                return;
+            }
+            QRCodeManager.printQRCode(eventId);
+        }
+
+        async function playRequest(requestId) {
+            try {
+                const nowIso = new Date().toISOString();
+                const result = await NetlifyDataManager.updateRequest(requestId, { status: 'played', playedAt: nowIso });
+                if (result && result.success) {
+                    const updated = result.data;
+                    const idx = APP_STATE.musicRequests.findIndex(r => r.id === requestId);
+                    if (idx !== -1) {
+                        APP_STATE.musicRequests[idx] = { ...APP_STATE.musicRequests[idx], ...updated };
+                    }
+                } else {
+                    // Fallback to local state update if needed
+                    const idx = APP_STATE.musicRequests.findIndex(r => r.id === requestId);
+                    if (idx !== -1) {
+                        APP_STATE.musicRequests[idx].status = 'played';
+                        APP_STATE.musicRequests[idx].playedAt = nowIso;
+                    }
+                }
+                const req = APP_STATE.musicRequests.find(r => r.id === requestId);
+                if (req) {
+                    NotificationManager.show(`"${req.songTitle}" de ${req.artist} est maintenant en cours !`);
+                } else {
+                    NotificationManager.show('Demande marquée comme jouée');
+                }
+                closeManageEventModal();
+                updateDJDashboard();
+            } catch (error) {
+                NotificationManager.show('Erreur lors de la lecture', 'error');
+            }
+        }
+
+        async function deleteRequest(requestId) {
+            try {
+                const result = await NetlifyDataManager.deleteRequest(requestId);
+                if (result && result.success) {
+                    APP_STATE.musicRequests = APP_STATE.musicRequests.filter(r => r.id !== requestId);
+                } else {
+                    // Fallback local removal
+                    APP_STATE.musicRequests = APP_STATE.musicRequests.filter(r => r.id !== requestId);
+                }
+                NotificationManager.show('Demande supprimée');
+                closeManageEventModal();
+                updateDJDashboard();
+            } catch (error) {
+                NotificationManager.show('Erreur lors de la suppression', 'error');
+            }
+        }
+
+        // DJ-only: removed participant UI logic from index.html. Participant flow now lives in `public/participant.html`.
+
+        // Rediriger automatiquement les liens participants mal orientés vers index.html
+        // Exemple: anciens QR / liens pointant vers index.html?event=...
+        (function redirectParticipantIfNeeded(){
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const hasEventParam = params.has('event') || params.has('eventId');
+                const isAdminLogged = sessionStorage.getItem('dj_admin_logged_in') === 'true';
+                if (hasEventParam && !isAdminLogged) {
+                    const qs = params.toString();
+                    window.location.replace(`/participant.html?${qs}`);
+                }
+            } catch (e) {
+                // no-op
+            }
+        })();
+
+        function updateConnectionStatus() {
+            const indicator = document.getElementById('realTimeIndicator');
+            if (APP_STATE.isOnline) {
+                indicator.className = 'real-time-indicator';
+                indicator.innerHTML = '<div class="real-time-dot"></div><span>Connecté</span>';
+            } else {
+                indicator.className = 'real-time-indicator offline';
+                indicator.innerHTML = '<div class="real-time-dot"></div><span>Hors ligne</span>';
+            }
+        }
+
+        // Initialisation
+        async function init() {
+            // Vérifier la session DJ (auth admin obligatoire pour accéder à index.html)
+            if (sessionStorage.getItem('dj_admin_logged_in') === 'true') {
+                APP_STATE.currentUser = { id: 'dj_1', name: sessionStorage.getItem('dj_admin_user') || 'DJ Admin', role: 'dj' };
+                InterfaceManager.showInterface('djDashboard');
+                DataSyncManager.startAutoSync();
+            } else {
+                window.location.href = 'admin-login.html';
+                return;
+            }
+            
+            // Event listeners (DJ-only)
+            const eventFormEl = document.getElementById('eventForm');
+            if (eventFormEl) eventFormEl.addEventListener('submit', handleEventForm);
+        }
+
+        // Démarrer l'application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
