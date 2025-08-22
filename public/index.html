@@ -974,7 +974,32 @@
         </div>
     </header>
 
-    
+    <!-- Login Interface -->
+    <div id="loginInterface" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1 class="login-title">🎵 DJ Event Manager Pro</h1>
+                <p class="login-subtitle">Accès DJ - Interface de gestion</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">Nom d'utilisateur</label>
+                    <input type="text" id="username" class="form-input" placeholder="dj_admin" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Mot de passe</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••••••" required>
+                </div>
+                
+                <button type="submit" class="btn btn-login btn-primary" id="loginBtn">
+                    <span id="loginText">Se connecter</span>
+                    <span id="loginLoader" class="hidden loading">🔄</span>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- Dashboard DJ -->
     <div id="djDashboard" class="dashboard hidden">
