@@ -8,6 +8,36 @@ const headers = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
 };
 
+async function ensureTables() {
+  // Create tables if they don't exist (idempotent)
+  await sql`
+    CREATE TABLE IF NOT EXISTS events (
+      id uuid PRIMARY KEY,
+      name text NOT NULL,
+      date timestamptz NOT NULL,
+      status text DEFAULT 'preparation',
+      location text,
+      expected_guests int,
+      description text,
+      short_code text,
+      created_at timestamptz DEFAULT now(),
+      updated_at timestamptz DEFAULT now()
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS requests (
+      id uuid PRIMARY KEY,
+      event_id uuid NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+      user_id text,
+      song_title text,
+      artist text,
+      status text DEFAULT 'pending',
+      created_at timestamptz DEFAULT now(),
+      updated_at timestamptz DEFAULT now()
+    );
+  `;
+}
+
 export default async (request, context) => {
   // Handle CORS preflight
   if (request.method === 'OPTIONS') {
@@ -15,6 +45,18 @@ export default async (request, context) => {
   }
 
   try {
+    // Ensure DB config exists
+    const dbUrl = (typeof process !== 'undefined') && (process.env.DATABASE_URL || process.env.NETLIFY_DATABASE_URL);
+    if (!dbUrl) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Database not configured. Set DATABASE_URL (or NETLIFY_DATABASE_URL) in Netlify environment variables.'
+      }), { status: 503, headers });
+    }
+
+    // Auto-migrate tables
+    await ensureTables();
+
     if (request.method === "GET") {
       // Récupère tous les events
       const rows = await sql`SELECT * FROM events ORDER BY date DESC`;
@@ -35,9 +77,16 @@ export default async (request, context) => {
         }), { status: 400, headers });
       }
 
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const status = body.status ?? 'preparation';
       const [newEvent] = await sql`
-        INSERT INTO events (id, name, date)
-        VALUES (${crypto.randomUUID()}, ${body.name}, ${body.date})
+        INSERT INTO events (
+          id, name, date, status, location, expected_guests, description, short_code, created_at, updated_at
+        ) VALUES (
+          ${id}, ${body.name}, ${body.date}, ${status}, ${body.location ?? null}, ${body.expectedGuests ?? null},
+          ${body.description ?? null}, ${body.shortCode ?? null}, ${now}, ${body.updatedAt ?? now}
+        )
         RETURNING *;
       `;
       return new Response(JSON.stringify({ success: true, data: newEvent }), { 
