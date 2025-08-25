@@ -1214,7 +1214,18 @@
                 const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[],"lastSync":0}');
                 
                 if (endpoint === 'events') {
-                    storage.events = data;
+                    // Fusionner côté cache local pour ne pas perdre des entrées locales transitoires
+                    const incoming = Array.isArray(data) ? data : [];
+                    const byId = new Map(storage.events.map(e => [e.id, e]));
+                    // Mettre à jour/ajouter les événements côté serveur
+                    for (const ev of incoming) {
+                        if (byId.has(ev.id)) {
+                            byId.set(ev.id, { ...byId.get(ev.id), ...ev });
+                        } else {
+                            byId.set(ev.id, ev);
+                        }
+                    }
+                    storage.events = Array.from(byId.values());
                 } else if (endpoint === 'requests') {
                     storage.requests = data;
                 }
