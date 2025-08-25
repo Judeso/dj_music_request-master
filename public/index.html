@@ -1194,15 +1194,16 @@
 
                     const result = await response.json();
                     
-                    // Synchroniser avec le stockage local en cas de succès
                     if (result.success && method === 'GET') {
                         this.updateLocalCache(endpoint, result.data);
                     }
                     
+                    APP_STATE.lastApiErrorAt = null;
                     APP_STATE.isOnline = true;
                     return result;
                 } catch (error) {
                     console.warn('API call failed, using local storage:', error);
+                    APP_STATE.lastApiErrorAt = Date.now();
                     APP_STATE.isOnline = false;
                     updateConnectionStatus();
                     // Fallback vers le stockage local
@@ -1316,7 +1317,16 @@
 
             static async getEvents() {
                 const result = await this.apiCall('events', 'GET');
-                return result.data || [];
+                const data = result.data || [];
+                // Si le serveur renvoie une liste vide mais que nous avons un cache local non vide, préférer le cache
+                try {
+                    const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[]}');
+                    if (Array.isArray(data) && data.length === 0 && Array.isArray(storage.events) && storage.events.length > 0) {
+                        console.warn('Server returned 0 events; using cached local events to prevent wipe.');
+                        return storage.events;
+                    }
+                } catch (_) {}
+                return data;
             }
 
             static async saveRequest(request) {
@@ -1809,19 +1819,34 @@
 
                     console.log('Synchronizing data...');
                     
-                    // Synchroniser d'abord les données en attente si on revient en ligne
+                    // Synchroniser d'abord les données en attente uniquement si en ligne
                     if (APP_STATE.isOnline) {
+                        console.log('Appel syncPendingData...');
                         await NetlifyDataManager.syncPendingData();
                     }
 
+                    console.log('Récupération events/requests du serveur...');
                     const [fetchedEvents, fetchedRequests] = await Promise.all([
                         NetlifyDataManager.getEvents(),
                         NetlifyDataManager.getRequests()
                     ]);
 
+                    console.log(`Events serveur reçus: ${Array.isArray(fetchedEvents) ? fetchedEvents.length : 0} events`);
+                    console.log(`Requests serveur reçues: ${Array.isArray(fetchedRequests) ? fetchedRequests.length : 0} requests`);
+
                     // Fusionner les événements pour éviter les disparitions temporaires
                     const localEvents = Array.isArray(APP_STATE.events) ? APP_STATE.events : [];
                     const serverEvents = Array.isArray(fetchedEvents) ? fetchedEvents : [];
+
+                    // Si hors-ligne et le serveur renvoie 0 alors que local a des données, conserver le local tel quel
+                    if (!APP_STATE.isOnline && serverEvents.length === 0 && localEvents.length > 0) {
+                        console.warn('Offline and server returned 0 events; preserving local events set.');
+                        APP_STATE.musicRequests = fetchedRequests || [];
+                        APP_STATE.lastSyncTime = now;
+                        this.updateUI();
+                        console.log('Data synchronized:', { events: localEvents.length, requests: APP_STATE.musicRequests.length });
+                        return true;
+                    }
 
                     const serverById = new Map(serverEvents.map(e => [e.id, e]));
                     const merged = [];
@@ -1841,9 +1866,18 @@
                     for (const le of localEvents) {
                         if (!serverById.has(le.id)) merged.push(le);
                     }
-
+                    console.log('Après merge initial:', merged);
+                    // Déduplication de sécurité (par id)
+                    const seen = new Set();
+                    const deduped = [];
+                    for (const ev of merged) {
+                        if (!seen.has(ev.id)) { seen.add(ev.id); deduped.push(ev); }
+                    }
+                    if (deduped.length !== merged.length) {
+                        console.log(`Déduplication: supprimé ${merged.length - deduped.length} doublons locaux`);
+                    }
                     // Mettre à jour l'état global
-                    APP_STATE.events = merged;
+                    APP_STATE.events = deduped;
                     APP_STATE.musicRequests = fetchedRequests || [];
                     APP_STATE.lastSyncTime = now;
 
@@ -1854,8 +1888,7 @@
 
                     // Mettre à jour l'interface si nécessaire
                     this.updateUI();
-
-                    APP_STATE.isOnline = true;
+                    // Ne pas écraser l'état réseau ici; laissé à apiCall()
                     updateConnectionStatus();
                     
                     return true;
