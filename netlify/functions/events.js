@@ -1,5 +1,6 @@
 // netlify/functions/events.js
 import { sql } from './db.js';
+import { randomUUID } from 'node:crypto';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -77,7 +78,7 @@ export default async (request, context) => {
         }), { status: 400, headers });
       }
 
-      const id = crypto.randomUUID();
+      const id = randomUUID();
       const now = new Date().toISOString();
       const status = body.status ?? 'preparation';
       const [newEvent] = await sql`
