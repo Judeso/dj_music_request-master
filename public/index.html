@@ -1299,7 +1299,8 @@
             }
 
             static async saveEvent(event) {
-                return await this.apiCall('events', 'POST', event);
+                const result = await this.apiCall('events', 'POST', event);
+                return result?.data;
             }
 
             static async getEvents() {
@@ -1338,10 +1339,22 @@
                 const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[]}');
                 
                 // Synchroniser les événements en attente
-                for (const event of storage.events.filter(e => e.needsSync)) {
+                for (const pending of [...storage.events].filter(e => e.needsSync)) {
                     try {
-                        await this.saveEvent(event);
-                        event.needsSync = false;
+                        const saved = await this.saveEvent(pending);
+                        if (saved && saved.id) {
+                            // Remplacer l'événement local par celui du serveur (ID mis à jour)
+                            const idx = storage.events.findIndex(e => e.id === pending.id);
+                            if (idx !== -1) {
+                                storage.events[idx] = { ...saved, needsSync: false };
+                            } else {
+                                storage.events.push({ ...saved, needsSync: false });
+                            }
+                        } else {
+                            // Si pas de retour valable, garder needsSync
+                            console.warn('saveEvent returned no data; will retry later');
+                            continue;
+                        }
                     } catch (error) {
                         console.error('Failed to sync event:', error);
                     }
@@ -1790,14 +1803,37 @@
                         await NetlifyDataManager.syncPendingData();
                     }
 
-                    const [events, requests] = await Promise.all([
+                    const [fetchedEvents, fetchedRequests] = await Promise.all([
                         NetlifyDataManager.getEvents(),
                         NetlifyDataManager.getRequests()
                     ]);
 
+                    // Fusionner les événements pour éviter les disparitions temporaires
+                    const localEvents = Array.isArray(APP_STATE.events) ? APP_STATE.events : [];
+                    const serverEvents = Array.isArray(fetchedEvents) ? fetchedEvents : [];
+
+                    const serverById = new Map(serverEvents.map(e => [e.id, e]));
+                    const merged = [];
+                    // Commencer avec les événements du serveur
+                    for (const ev of serverEvents) {
+                        const local = localEvents.find(le => le.id === ev.id);
+                        if (local) {
+                            // Choisir la version la plus récente, ou garder local si needsSync
+                            const lu = new Date(local.updatedAt || 0).getTime();
+                            const su = new Date(ev.updatedAt || 0).getTime();
+                            merged.push(local.needsSync || lu > su ? { ...ev, ...local } : ev);
+                        } else {
+                            merged.push(ev);
+                        }
+                    }
+                    // Ajouter les événements uniquement locaux (ex: id commençant par local_)
+                    for (const le of localEvents) {
+                        if (!serverById.has(le.id)) merged.push(le);
+                    }
+
                     // Mettre à jour l'état global
-                    APP_STATE.events = events || [];
-                    APP_STATE.musicRequests = requests || [];
+                    APP_STATE.events = merged;
+                    APP_STATE.musicRequests = fetchedRequests || [];
                     APP_STATE.lastSyncTime = now;
 
                     console.log('Data synchronized:', {
@@ -2149,22 +2185,30 @@
                     
                     // Ensuite synchroniser avec le serveur
                     try {
-                        await NetlifyDataManager.updateEvent(eventId, { 
-                            status: newStatus,
-                            updatedAt: new Date().toISOString()
-                        });
-                        
-                        const statusMessages = {
-                            'active': 'L\'événement est maintenant actif ! Les utilisateurs peuvent faire leurs demandes.',
-                            'finished': 'L\'événement a été marqué comme terminé.',
-                            'cancelled': 'L\'événement a été annulé.'
-                        };
-                        
-                        NotificationManager.show(statusMessages[newStatus]);
-                        
-                        // Forcer une synchronisation pour s'assurer que tout est à jour
-                        await DataSyncManager.syncData(true);
-                        
+                        const isLocal = String(eventId).startsWith('local_');
+                        if (isLocal) {
+                            // Marquer pour synchro ultérieure via POST (nouvel ID serveur)
+                            const storage = JSON.parse(localStorage.getItem('djEventData') || '{"events":[],"requests":[]}');
+                            const idx = storage.events.findIndex(e => e.id === eventId);
+                            if (idx !== -1) {
+                                storage.events[idx] = { ...storage.events[idx], status: newStatus, needsSync: true, updatedAt: new Date().toISOString() };
+                                localStorage.setItem('djEventData', JSON.stringify(storage));
+                            }
+                            NotificationManager.show('Statut mis à jour localement. Synchronisation en cours...');
+                        } else {
+                            await NetlifyDataManager.updateEvent(eventId, { 
+                                status: newStatus,
+                                updatedAt: new Date().toISOString()
+                            });
+                            const statusMessages = {
+                                'active': 'L\'événement est maintenant actif ! Les utilisateurs peuvent faire leurs demandes.',
+                                'finished': 'L\'événement a été marqué comme terminé.',
+                                'cancelled': 'L\'événement a été annulé.'
+                            };
+                            NotificationManager.show(statusMessages[newStatus]);
+                        }
+                        // Laisser l'auto-sync consolider l'état, sans remplacement brutal
+                        DataSyncManager.syncData(true);
                     } catch (error) {
                         // En cas d'erreur serveur, revenir à l'ancien statut
                         APP_STATE.events[eventIndex].status = oldStatus;
