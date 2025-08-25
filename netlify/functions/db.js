@@ -13,6 +13,18 @@ function sanitizeDbUrl(raw) {
   if ((url.startsWith('"') && url.endsWith('"')) || (url.startsWith("'") && url.endsWith("'"))) {
     url = url.slice(1, -1);
   }
+  // Normalize scheme: postgresql:// -> postgres://
+  url = url.replace(/^postgresql:\/\//i, 'postgres://');
+  // Remove unsupported query params like channel_binding=...
+  try {
+    const u = new URL(url);
+    if (u.searchParams.has('channel_binding')) {
+      u.searchParams.delete('channel_binding');
+    }
+    url = u.toString();
+  } catch (_) {
+    // If URL constructor fails, keep original; neon() will throw with a clearer message
+  }
   return url;
 }
 
