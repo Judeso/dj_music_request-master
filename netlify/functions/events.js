@@ -11,6 +11,8 @@ const headers = {
 
 async function ensureTables() {
   // Create tables if they don't exist (idempotent)
+  // Quick connectivity probe
+  await sql`SELECT 1 as ok`;
   await sql`
     CREATE TABLE IF NOT EXISTS events (
       id uuid PRIMARY KEY,
@@ -56,7 +58,16 @@ export default async (request, context) => {
     }
 
     // Auto-migrate tables
-    await ensureTables();
+    try {
+      await ensureTables();
+    } catch (e) {
+      console.error('ensureTables failed:', e);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Database init failed',
+        details: e && (e.message || String(e))
+      }), { status: 500, headers });
+    }
 
     if (request.method === "GET") {
       // Récupère tous les events
@@ -166,7 +177,8 @@ export default async (request, context) => {
     console.error('Events API Error:', err);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: err.message 
+      error: err && (err.message || String(err)),
+      stack: err && err.stack ? err.stack : undefined
     }), { status: 500, headers });
   }
 };
